@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis AI</title>
+    <script>
+        async function sendCommand() {
+            const response = await fetch('/process', { method: 'POST' });
+            const data = await response.json();
+            document.getElementById("response").innerText = data.Jarvis;
+        }
+    </script>
+</head>
+<body>
+    <h1>Welcome to Jarvis AI</h1>
+    <button onclick="sendCommand()">Start Listening</button>
+    <p id="response"></p>
+</body>
+</html>
+
