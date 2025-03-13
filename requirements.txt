@@ -1,0 +1,4 @@
+Flask
+SpeechRecognition
+pyttsx3
+openai
