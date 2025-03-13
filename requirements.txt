@@ -1,5 +1,9 @@
 Flask
-SpeechRecognition
+flask-cors
+gunicorn
+requests
+speechrecognition
+pyaudio
 pyttsx3
-espeak
 openai
+espeak
