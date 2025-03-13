@@ -14,8 +14,14 @@ app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 # Set OpenAI API Key (You must add this to your environment variables)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Initialize Text-to-Speech engine
-engine = pyttsx3.init()
+import pyttsx3
+import platform
+
+def speak(text):
+    engine = pyttsx3.init(driverName='sapi5' if platform.system() == "Windows" else 'nsss')
+    engine.say(text)
+    engine.runAndWait()
+
 
 # Function to Convert Text to Speech
 def speak(text):
