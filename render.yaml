@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: jarvis-ai
+    env: python
+    buildCommand: |
+      apt-get update && apt-get install -y portaudio19-dev ffmpeg
+      pip install -r requirements.txt
+    startCommand: gunicorn jarvis:app --bind 0.0.0.0:10000
