@@ -9,7 +9,7 @@
         async function sendCommand() {
             const response = await fetch('/process', { method: 'POST' });
             const data = await response.json();
-            document.getElementById("response").innerText = data.Jarvis;
+            document.getElementById("response").innerText = data.jarvis;
         }
     </script>
 </head>
