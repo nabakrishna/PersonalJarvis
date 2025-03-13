@@ -1,32 +1,47 @@
+/* General body styles */
 body {
     font-family: Arial, sans-serif;
-    background-color: #121212;
-    color: white;
-    text-align: center;
-    padding: 20px;
+    background-color: #121212; /* Dark background */
+    color: white; /* White text */
+    text-align: center; /* Centered text */
+    padding: 20px; /* Padding around the content */
+    margin: 0; /* Remove default margin */
 }
 
+/* Heading styles */
 h1 {
-    font-size: 2rem;
-    margin-bottom: 20px;
+    font-size: 2.5rem; /* Increased font size for better visibility */
+    margin-bottom: 20px; /* Space below the heading */
 }
 
+/* Button styles */
 button {
-    background-color: #ff5722;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    font-size: 1rem;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: 0.3s;
+    background-color: #ff5722; /* Button color */
+    color: white; /* Text color */
+    border: none; /* No border */
+    padding: 12px 20px; /* Padding inside the button */
+    font-size: 1rem; /* Font size */
+    cursor: pointer; /* Pointer cursor on hover */
+    border-radius: 8px; /* Rounded corners */
+    transition: background-color 0.3s ease; /* Smooth transition for hover effect */
 }
 
+/* Button hover effect */
 button:hover {
-    background-color: #e64a19;
+    background-color: #e64a19; /* Darker shade on hover */
 }
 
+/* Paragraph styles */
 p {
-    margin-top: 20px;
-    font-size: 1.2rem;
+    margin-top: 20px; /* Space above the paragraph */
+    font-size: 1.2rem; /* Font size */
+}
+
+/* Additional styles for better layout */
+.container {
+    max-width: 800px; /* Maximum width for content */
+    margin: 0 auto; /* Center the container */
+    padding: 20px; /* Padding inside the container */
+    background-color: rgba(255, 255, 255, 0.1); /* Slightly transparent background */
+    border-radius: 10px; /* Rounded corners for the container */
 }
