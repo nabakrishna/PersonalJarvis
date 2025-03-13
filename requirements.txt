@@ -2,6 +2,7 @@ Flask
 flask-cors
 openai
 speechrecognition
-pyaudio
 gtts
+ffmpeg
+pyaudio
 
