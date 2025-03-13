@@ -1,9 +1,7 @@
 Flask
 flask-cors
-gunicorn
-requests
+openai
 speechrecognition
 pyaudio
-pyttsx3
-openai
-espeak
+gtts
+
