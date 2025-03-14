@@ -6,22 +6,32 @@
     <title>Jarvis AI - Voice Assistant</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+    
+    <!-- Google Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <div class="container">
-        <h1>🤖 Jarvis AI</h1>
+        <h1 class="title">🤖 Jarvis AI</h1>
 
+        <!-- Chat Box -->
         <div class="chat-box" id="chatBox">
-            <!-- Messages will be dynamically added here -->
+            <!-- AI and User messages will be added here -->
         </div>
 
-        <!-- 🔹 Response area added here -->
-        <div id="response"></div>  
+        <!-- User Input Section -->
+        <div class="input-section">
+            <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off">
+            <button id="sendButton"><i class="fas fa-paper-plane"></i></button>
+            <button id="micButton"><i class="fas fa-microphone"></i></button>
+        </div>
 
-        <button id="startButton">🎤 Start Listening</button>
+        <!-- Loader Animation (Hidden by Default) -->
         <div id="loader" class="loader"></div>
     </div>
 </body>
 </html>
+
 
 
