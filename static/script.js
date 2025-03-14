@@ -1,96 +1,121 @@
-document.getElementById("startButton").addEventListener("click", async function () {
-    try {
-        const startButton = document.getElementById("startButton");
-        const responseContainer = document.getElementById("response");
-        const copyButton = document.getElementById("copyButton");
+document.addEventListener("DOMContentLoaded", function () {
+    const startButton = document.getElementById("startButton");
+    const responseBox = document.getElementById("response");
+    const chatBox = document.querySelector(".chat-box");
 
-        // Check if browser supports SpeechRecognition
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            alert("Speech recognition is not supported in this browser. Please use Chrome.");
-            return;
+    // Ensure SpeechRecognition is supported
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        alert("Speech recognition is not supported in this browser. Please use Chrome.");
+        return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.continuous = true; // Allows longer input
+    recognition.maxAlternatives = 1;
+
+    let speechText = "";
+
+    startButton.addEventListener("click", function () {
+        try {
+            // Request Microphone Permission
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(() => {
+                    responseBox.innerText = "🎙 Listening... Speak now!";
+                    startButton.disabled = true;
+                    recognition.start();
+                })
+                .catch((error) => {
+                    alert("Microphone access denied! Please allow access.");
+                    console.error("Mic Error:", error);
+                });
+        } catch (error) {
+            console.error("Speech recognition error:", error);
+            responseBox.innerText = "❌ Error: " + error.message;
+        }
+    });
+
+    // Capture Speech
+    recognition.onresult = function (event) {
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            speechText += event.results[i][0].transcript + " ";
         }
 
-        const recognition = new SpeechRecognition();
-        recognition.lang = "en-US";
-        recognition.interimResults = false;
-        recognition.continuous = false;
-        recognition.maxAlternatives = 1;
+        if (speechText.split(/\s+/).length >= 50) {
+            recognition.stop(); // Stop if too long
+        }
+    };
 
-        let speechText = "";
-        startButton.disabled = true;
-        responseContainer.innerHTML = `<span class="listening">🎙️ Listening... Speak now!</span>`;
+    recognition.onspeechend = function () {
+        recognition.stop(); // Stop listening when user stops talking
+    };
 
-        recognition.start();
+    recognition.onend = async function () {
+        startButton.disabled = false;
+        responseBox.innerHTML = "<span class='typing-animation'></span>";
 
-        // Capture recognized speech
-        recognition.onresult = async function (event) {
-            speechText = event.results[0][0].transcript;
-            responseContainer.innerHTML = `<span class="user-input">You: "${speechText}"</span>`;
+        try {
+            // Send input to AI API (Flask backend)
+            const response = await fetch("/speak", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: speechText.trim() }),
+            });
 
-            // Show loading animation
-            responseContainer.innerHTML += `<div class="loading">Jarvis is thinking...</div>`;
+            const result = await response.json();
+            const aiResponse = result.response;
 
-            // Send recognized speech to Flask backend
-            try {
-                const response = await fetch("/text", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text: speechText.trim() }),
-                });
+            // Display User Message
+            addMessage(speechText, "user-message");
 
-                const result = await response.json();
-                responseContainer.innerHTML = `
-                    <span class="user-input">You: "${speechText}"</span>
-                    <span class="ai-response">Jarvis: "${result.response}"</span>
-                `;
+            // Display AI Response
+            setTimeout(() => {
+                addMessage(aiResponse, "ai-message");
+                speak(aiResponse); // AI speaks
+            }, 1000);
 
-                copyButton.style.display = "block"; // Show copy button
+        } catch (error) {
+            console.error("AI Error:", error);
+            responseBox.innerText = "❌ Failed to process your request.";
+        }
 
-                // Make AI speak the response
-                speak(result.response);
-            } catch (error) {
-                console.error("Error:", error);
-                responseContainer.innerHTML = `<span class="error">❌ Failed to process your request.</span>`;
-            }
+        startButton.disabled = false; // Re-enable button
+    };
 
-            startButton.disabled = false;
-        };
+    recognition.onerror = function (event) {
+        console.error("Speech recognition error:", event.error);
+        responseBox.innerText = "❌ Error: " + event.error;
+        startButton.disabled = false;
+    };
 
-        recognition.onspeechend = function () {
-            recognition.stop();
-        };
+    // Function to Make AI Speak
+    function speak(text) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        speechSynthesis.speak(utterance);
+    }
 
-        recognition.onend = function () {
-            startButton.disabled = false;
-        };
+    // Function to Add Messages to Chat
+    function addMessage(text, className) {
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("message", className);
+        messageDiv.innerText = text;
 
-        recognition.onerror = function (event) {
-            console.error("Speech recognition error:", event.error);
-            responseContainer.innerHTML = `<span class="error">❌ Error: ${event.error}</span>`;
-            startButton.disabled = false;
-        };
-    } catch (error) {
-        console.error("Error:", error);
-        document.getElementById("response").innerText = "❌ Your browser doesn't support speech recognition.";
-        document.getElementById("startButton").disabled = false;
+        // Add Copy Button for AI Response
+        if (className === "ai-message") {
+            const copyBtn = document.createElement("button");
+            copyBtn.classList.add("copy-btn");
+            copyBtn.innerText = "📋 Copy";
+            copyBtn.onclick = () => {
+                navigator.clipboard.writeText(text);
+                copyBtn.innerText = "✅ Copied!";
+                setTimeout(() => (copyBtn.innerText = "📋 Copy"), 2000);
+            };
+            messageDiv.appendChild(copyBtn);
+        }
+
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll
     }
 });
-
-// Function to make AI speak the response
-function speak(text) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.0; // Normal speaking speed
-    utterance.pitch = 1.0; // Normal pitch
-    window.speechSynthesis.speak(utterance);
-}
-
-// Copy Response Feature
-document.getElementById("copyButton").addEventListener("click", function () {
-    const responseText = document.querySelector(".ai-response").innerText.replace("Jarvis: ", "");
-    navigator.clipboard.writeText(responseText);
-    alert("Response copied to clipboard!");
-});
-
-
-
