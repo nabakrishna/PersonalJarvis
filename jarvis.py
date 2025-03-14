@@ -7,13 +7,13 @@ from flask_cors import CORS
 
 # Initialize Flask App
 app = Flask(__name__)
-app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 CORS(app)
 
-# Set OpenAI API Key (You must add this to your environment variables)
+# Set OpenAI API Key
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+openai.api_key = OPENAI_API_KEY  # Add this line
 
-# Function for Speech Recognition (Using Google Web Speech API)
+# Function for Speech Recognition
 def recognize_speech():
     recognizer = sr.Recognizer()
     with sr.Microphone() as source:
@@ -21,7 +21,7 @@ def recognize_speech():
         print("Listening... Speak now.")
         try:
             audio = recognizer.listen(source, timeout=5)
-            return recognizer.recognize_google(audio)  # No need for PyAudio
+            return recognizer.recognize_google(audio)  
         except sr.UnknownValueError:
             return "Sorry, I couldn't understand that."
         except sr.RequestError:
@@ -49,32 +49,22 @@ def index():
 # Speech Input Route (Voice to Text + AI Response)
 @app.route('/speak', methods=['POST'])
 def process_speech():
-    user_input = recognize_speech()
-    if user_input:
+    try:
+        data = request.get_json()
+        user_input = data.get("text", "")
+
+        if not user_input:
+            return jsonify({"response": "No input detected. Try speaking again."}), 400
+
         response = get_ai_response(user_input)
         return jsonify({"response": response, "input": user_input})
-    return jsonify({"response": "Sorry, I couldn't hear you. Try again."})
 
-# Text Input Route (Text to AI Response)
-@app.route('/text', methods=['POST'])
-def text_input():
-    data = request.get_json()
-    user_input = data.get("text", "")
-    if user_input:
-        response = get_ai_response(user_input)
-        return jsonify({"response": response})
-    return jsonify({"response": "No input received."})
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"response": "Internal Server Error", "error": str(e)}), 500
 
-# Voice Input Route (Voice to AI Response)
-@app.route('/voice', methods=['POST'])
-def voice_input():
-    user_speech = recognize_speech()
-    if user_speech:
-        response = get_ai_response(user_speech)
-        return jsonify({"response": response})
-    return jsonify({"response": "No valid input received."})
-
-# Run the Flask app
+# Run Flask
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
+
 
