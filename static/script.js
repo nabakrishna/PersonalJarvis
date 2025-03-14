@@ -1,67 +1,46 @@
-document.addEventListener("DOMContentLoaded", function () {
-    const startButton = document.getElementById("startButton");
-    
-    if (startButton) {
-        startButton.addEventListener("click", function () {
-            console.log("Start Listening button clicked!");
-            startListening();
-        });
-    } else {
-        console.error("Button with ID 'startButton' not found!");
+document.getElementById("startButton").addEventListener("click", async function () {
+    try {
+        // Check if the browser supports speech recognition
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("Speech recognition is not supported in this browser. Please use Chrome.");
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = "en-US";
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        // Start listening
+        recognition.start();
+
+        // When speech is recognized
+        recognition.onresult = async function (event) {
+            const userSpeech = event.results[0][0].transcript;
+            document.getElementById("response").innerText = "You said: " + userSpeech;
+
+            // Send the recognized speech to Flask backend
+            const response = await fetch("/text", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ text: userSpeech }),
+            });
+
+            const data = await response.json();
+            document.getElementById("response").innerText = "Jarvis: " + data.response;
+        };
+
+        // Handle errors
+        recognition.onerror = function (event) {
+            console.error("Speech recognition error:", event.error);
+            document.getElementById("response").innerText = "Error: " + event.error;
+        };
+    } catch (error) {
+        console.error("Error:", error);
+        document.getElementById("response").innerText = "Something went wrong.";
     }
 });
 
-function startListening() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("Your browser does not support microphone access.");
-        return;
-    }
-
-    navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(stream => {
-            console.log("Microphone access granted!");
-            startSpeechRecognition();
-        })
-        .catch(error => {
-            console.error("Microphone access denied:", error);
-            alert("Please allow microphone access.");
-        });
-}
-
-function startSpeechRecognition() {
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = "en-US";
-
-    recognition.onstart = function () {
-        console.log("Listening...");
-    };
-
-    recognition.onresult = function (event) {
-        const transcript = event.results[0][0].transcript;
-        console.log("You said:", transcript);
-        document.getElementById("response").innerText = "You said: " + transcript;
-        
-        // Send recognized text to Flask backend
-        sendToBackend(transcript);
-    };
-
-    recognition.onerror = function (event) {
-        console.error("Speech recognition error:", event.error);
-    };
-
-    recognition.start();
-}
-
-function sendToBackend(text) {
-    fetch('/text', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text })
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log("Jarvis Response:", data.response);
-        document.getElementById("response").innerText = "Jarvis: " + data.response;
-    })
-    .catch(error => console.error("Error:", error));
-}
