@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jarvis AI - Voice Assistant</title>
+    
+    <!-- CSS & JavaScript -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="{{ url_for('static', filename='script.js') }}" defer></script>
     
@@ -17,14 +19,14 @@
 
         <!-- Chat Box -->
         <div class="chat-box" id="chatBox">
-            <!-- AI and User messages will be added here -->
+            <!-- AI and User messages will be dynamically added here -->
         </div>
 
         <!-- User Input Section -->
         <div class="input-section">
             <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off">
             <button id="sendButton"><i class="fas fa-paper-plane"></i></button>
-            <button id="micButton"><i class="fas fa-microphone"></i></button>
+            <button id="startButton"><i class="fas fa-microphone"></i></button>
         </div>
 
         <!-- Loader Animation (Hidden by Default) -->
@@ -32,6 +34,3 @@
     </div>
 </body>
 </html>
-
-
-
