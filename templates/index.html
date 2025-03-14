@@ -3,16 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jarvis AI</title>
+    <title>Jarvis AI - Voice Assistant</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 <body>
-    <h1>Welcome to Jarvis AI</h1>
-    <button id="startButton">Start Listening</button>
-    <p id="response"></p>
+    <div class="container">
+        <h1>🤖 Jarvis AI</h1>
 
-    <!-- JavaScript file -->
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+        <div class="chat-box" id="chatBox">
+            <!-- Messages will be dynamically added here -->
+        </div>
+
+        <button id="startButton">🎤 Start Listening</button>
+        <div id="loader" class="loader"></div>
+    </div>
 </body>
 </html>
+
 
