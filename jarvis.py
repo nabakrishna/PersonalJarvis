@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from flask import Flask, render_template, request, jsonify
 import speech_recognition as sr
 import openai
@@ -9,6 +10,9 @@ from flask_cors import CORS
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 CORS(app)
+
+# Configure Logging
+logging.basicConfig(level=logging.INFO)
 
 # Load OpenAI API Key
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -22,7 +26,7 @@ def recognize_speech():
     recognizer = sr.Recognizer()
     with sr.Microphone() as source:
         recognizer.adjust_for_ambient_noise(source)
-        print("🎤 Listening...")
+        logging.info("🎤 Listening...")
         try:
             audio = recognizer.listen(source, timeout=5)
             text = recognizer.recognize_google(audio)
@@ -46,7 +50,11 @@ def get_ai_response(user_input):
             ]
         )
         return response["choices"][0]["message"]["content"]
+    except openai.error.OpenAIError as e:
+        logging.error(f"❌ OpenAI API Error: {e}")
+        return f"Error: OpenAI API issue - {str(e)}"
     except Exception as e:
+        logging.error(f"❌ General Error: {e}")
         return f"Error: {str(e)}"
 
 # Home Route
@@ -57,32 +65,40 @@ def index():
 # Speech Input Route (Voice to Text + AI Response)
 @app.route('/speak', methods=['POST'])
 def process_speech():
-    print("🔄 Processing Speech...")
-    
+    logging.info("🔄 Processing Speech...")
+
     user_input = recognize_speech()
-    print(f"🎙 Recognized: {user_input}")
+    logging.info(f"🎙 Recognized: {user_input}")
 
     if "Error" in user_input:
         return jsonify({"error": user_input}), 400
 
     ai_response = get_ai_response(user_input)
-    print(f"🤖 AI Response: {ai_response}")
+    logging.info(f"🤖 AI Response: {ai_response}")
 
     return jsonify({"response": ai_response, "input": user_input})
 
 # Text Input Route (Text to AI Response)
 @app.route('/text', methods=['POST'])
 def text_input():
-    data = request.get_json()
-    user_input = data.get("text", "").strip()
+    try:
+        data = request.get_json()
+        user_input = data.get("text", "").strip()
 
-    if not user_input:
-        return jsonify({"error": "No input received."}), 400
+        if not user_input:
+            return jsonify({"error": "No input received."}), 400
 
-    ai_response = get_ai_response(user_input)
-    return jsonify({"response": ai_response})
+        ai_response = get_ai_response(user_input)
+        logging.info(f"📩 Text Input: {user_input} → 🤖 Response: {ai_response}")
+
+        return jsonify({"response": ai_response})
+
+    except Exception as e:
+        logging.error(f"❌ Server Error: {e}")
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 # Run the Flask app
 if __name__ == '__main__':
+    logging.info("🚀 Starting Flask server...")
     app.run(host="0.0.0.0", port=5000, debug=True)
 
