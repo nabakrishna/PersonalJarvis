@@ -15,8 +15,12 @@ document.addEventListener("DOMContentLoaded", function () {
     recognition.continuous = false; // Stops after one sentence
     recognition.maxAlternatives = 1;
 
+    let isProcessing = false; // Prevent multiple requests
+
     // Event Listener for Start Button
     startButton.addEventListener("click", function () {
+        if (isProcessing) return; // Prevent spam clicking
+
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(() => {
                 console.log("🎤 Microphone access granted.");
@@ -37,6 +41,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Process Speech Recognition Result
     recognition.onresult = async function (event) {
+        if (isProcessing) return; // Prevent multiple API calls
+
         let speechText = event.results[0][0].transcript.trim();
         console.log("User Said:", speechText);
 
@@ -49,21 +55,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Handle Recognition End
     recognition.onend = function () {
-        startButton.disabled = false;
-        startButton.innerText = "🎤 Start Listening";
+        if (!isProcessing) {
+            startButton.disabled = false;
+            startButton.innerText = "🎤 Start Listening";
+        }
     };
 
     recognition.onerror = function (event) {
         console.error("Speech recognition error:", event.error);
         addMessage("❌ Error: " + event.error, "error-message");
+        startButton.disabled = false;
+        startButton.innerText = "🎤 Start Listening";
     };
 
     // Send Speech to Flask Backend
     async function processSpeech(speechText) {
-        try {
-            // Show Typing Animation
-            addMessage("🤖 Thinking...", "ai-message");
+        isProcessing = true; // Lock processing
+        startButton.innerText = "🤖 Thinking..."; // Indicate processing
+        addMessage("🤖 Thinking...", "ai-message");
 
+        try {
             const response = await fetch("/speak", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -80,18 +91,40 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             // Display AI Response
-            addMessage(result.response, "ai-message");
-            speak(result.response); // AI Reads Out Response
+            updateLastMessage(result.response);
+            await speak(result.response); // AI Reads Out Response
+
         } catch (error) {
             console.error("AI Error:", error);
-            addMessage("❌ " + error.message, "error-message");
+            updateLastMessage("❌ " + error.message, true);
+        } finally {
+            isProcessing = false;
+            startButton.innerText = "🎤 Start Listening";
+            startButton.disabled = false;
+
+            // Restart recognition after AI speaks
+            setTimeout(() => recognition.start(), 1500);
         }
     }
 
     // AI Text-to-Speech
-    function speak(text) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        speechSynthesis.speak(utterance);
+    async function speak(text) {
+        return new Promise((resolve) => {
+            if (!window.speechSynthesis) {
+                console.error("Speech synthesis not supported.");
+                resolve();
+                return;
+            }
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.onend = resolve; // Ensure function waits until speech ends
+            utterance.onerror = () => {
+                console.error("Speech synthesis error.");
+                resolve();
+            };
+
+            speechSynthesis.speak(utterance);
+        });
     }
 
     // Function to Add Messages to Chat Box
@@ -116,5 +149,15 @@ document.addEventListener("DOMContentLoaded", function () {
         chatBox.appendChild(messageDiv);
         chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll
     }
+
+    // Function to Update Last Message (for loading animation replacement)
+    function updateLastMessage(newText, isError = false) {
+        const messages = document.querySelectorAll(".chat-box .ai-message");
+        if (messages.length > 0) {
+            messages[messages.length - 1].innerText = newText;
+            if (isError) messages[messages.length - 1].classList.add("error-message");
+        }
+    }
 });
+
 
