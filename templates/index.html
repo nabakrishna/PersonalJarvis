@@ -5,17 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jarvis AI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script>
-        async function sendCommand() {
-            const response = await fetch('/process', { method: 'POST' });
-            const data = await response.json();
-            document.getElementById("response").innerText = data.jarvis;
-        }
-    </script>
 </head>
 <body>
     <h1>Welcome to Jarvis AI</h1>
-    <button onclick="sendCommand()">Start Listening</button>
+    <button id="startButton">Start Listening</button>
     <p id="response"></p>
+
+    <!-- JavaScript file -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
+
