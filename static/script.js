@@ -1,49 +1,37 @@
 document.getElementById("startButton").addEventListener("click", async function () {
     try {
         const startButton = document.getElementById("startButton");
-        const responseText = document.getElementById("response");
+        const responseContainer = document.getElementById("response");
+        const copyButton = document.getElementById("copyButton");
 
-        // Check if the browser supports SpeechRecognition
+        // Check if browser supports SpeechRecognition
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
             alert("Speech recognition is not supported in this browser. Please use Chrome.");
             return;
         }
 
-        const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+        const recognition = new SpeechRecognition();
         recognition.lang = "en-US";
         recognition.interimResults = false;
-        recognition.continuous = true; // Allows capturing multiple lines
+        recognition.continuous = false;
         recognition.maxAlternatives = 1;
 
         let speechText = "";
+        startButton.disabled = true;
+        responseContainer.innerHTML = `<span class="listening">🎙️ Listening... Speak now!</span>`;
 
-        startButton.disabled = true; // Disable button while listening
-        document.getElementById("response").innerText = "🎙 Listening... Speak now!";
-
-        // Start speech recognition
         recognition.start();
 
         // Capture recognized speech
         recognition.onresult = async function (event) {
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                speechText += event.results[i][0].transcript + " "; // Append each recognized part
-            }
+            speechText = event.results[0][0].transcript;
+            responseContainer.innerHTML = `<span class="user-input">You: "${speechText}"</span>`;
 
-            if (speechText.split(/\s+/).length >= 20) {
-                recognition.stop(); // Stop listening if 20 words are reached
-            }
-        };
+            // Show loading animation
+            responseContainer.innerHTML += `<div class="loading">Jarvis is thinking...</div>`;
 
-        recognition.onspeechend = function () {
-            recognition.stop(); // Stop listening when the user stops talking
-        };
-
-        recognition.onend = async function () {
-            startButton.disabled = false;
-            document.getElementById("response").innerText = "Processing...";
-            
-            // Send the recognized speech to Flask backend
+            // Send recognized speech to Flask backend
             try {
                 const response = await fetch("/text", {
                     method: "POST",
@@ -52,17 +40,25 @@ document.getElementById("startButton").addEventListener("click", async function 
                 });
 
                 const result = await response.json();
-                document.getElementById("response").innerText = "Jarvis: " + result.response;
+                responseContainer.innerHTML = `
+                    <span class="user-input">You: "${speechText}"</span>
+                    <span class="ai-response">Jarvis: "${result.response}"</span>
+                `;
 
-                // Use Speech Synthesis API to read the response aloud
-                const utterance = new SpeechSynthesisUtterance(result.response);
-                speechSynthesis.speak(utterance);
+                copyButton.style.display = "block"; // Show copy button
+
+                // Make AI speak the response
+                speak(result.response);
             } catch (error) {
                 console.error("Error:", error);
-                document.getElementById("response").innerText = "❌ Failed to process your request.";
+                responseContainer.innerHTML = `<span class="error">❌ Failed to process your request.</span>`;
             }
 
-            startButton.disabled = false; // Re-enable button
+            startButton.disabled = false;
+        };
+
+        recognition.onspeechend = function () {
+            recognition.stop();
         };
 
         recognition.onend = function () {
@@ -71,14 +67,30 @@ document.getElementById("startButton").addEventListener("click", async function 
 
         recognition.onerror = function (event) {
             console.error("Speech recognition error:", event.error);
-            document.getElementById("response").innerText = "❌ Error: " + event.error;
+            responseContainer.innerHTML = `<span class="error">❌ Error: ${event.error}</span>`;
             startButton.disabled = false;
         };
     } catch (error) {
-        console.error("Speech recognition not supported:", error);
+        console.error("Error:", error);
         document.getElementById("response").innerText = "❌ Your browser doesn't support speech recognition.";
-        startButton.disabled = false;
+        document.getElementById("startButton").disabled = false;
     }
 });
+
+// Function to make AI speak the response
+function speak(text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0; // Normal speaking speed
+    utterance.pitch = 1.0; // Normal pitch
+    window.speechSynthesis.speak(utterance);
+}
+
+// Copy Response Feature
+document.getElementById("copyButton").addEventListener("click", function () {
+    const responseText = document.querySelector(".ai-response").innerText.replace("Jarvis: ", "");
+    navigator.clipboard.writeText(responseText);
+    alert("Response copied to clipboard!");
+});
+
 
 
