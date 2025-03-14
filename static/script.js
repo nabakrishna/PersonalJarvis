@@ -1,9 +1,8 @@
 document.addEventListener("DOMContentLoaded", function () {
     const startButton = document.getElementById("startButton");
-    const responseBox = document.getElementById("responseBox");
-    const chatBox = document.getElementById("chatBox");
+    const chatBox = document.querySelector(".chat-box");
 
-    // Ensure SpeechRecognition is supported
+    // Check SpeechRecognition support
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
         alert("Speech recognition is not supported in this browser. Please use Chrome.");
@@ -13,79 +12,95 @@ document.addEventListener("DOMContentLoaded", function () {
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
     recognition.interimResults = false;
-    recognition.continuous = false; // Stops after a single speech input
+    recognition.continuous = false; // Stops after one sentence
+    recognition.maxAlternatives = 1;
 
+    // Event Listener for Start Button
     startButton.addEventListener("click", function () {
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(() => {
-                responseBox.innerText = "🎙 Listening... Speak now!";
-                startButton.disabled = true;
-                recognition.start();
+                console.log("🎤 Microphone access granted.");
+                startListening();
             })
             .catch((error) => {
                 alert("Microphone access denied! Please allow access.");
-                console.error("Mic Error:", error);
+                console.error("❌ Mic Error:", error);
             });
     });
 
-    // Capture Speech
-    recognition.onresult = async function (event) {
-        const speechText = event.results[0][0].transcript.trim();
+    // Start Speech Recognition
+    function startListening() {
+        startButton.disabled = true;
+        startButton.innerText = "🎙 Listening...";
+        recognition.start();
+    }
 
-        // Display User Message
+    // Process Speech Recognition Result
+    recognition.onresult = async function (event) {
+        let speechText = event.results[0][0].transcript.trim();
+        console.log("User Said:", speechText);
+
+        // Display User Speech
         addMessage(speechText, "user-message");
 
-        responseBox.innerText = "🤖 Processing...";
+        // Send Speech to Backend API
+        await processSpeech(speechText);
+    };
 
+    // Handle Recognition End
+    recognition.onend = function () {
+        startButton.disabled = false;
+        startButton.innerText = "🎤 Start Listening";
+    };
+
+    recognition.onerror = function (event) {
+        console.error("Speech recognition error:", event.error);
+        addMessage("❌ Error: " + event.error, "error-message");
+    };
+
+    // Send Speech to Flask Backend
+    async function processSpeech(speechText) {
         try {
-            // Send speech text to AI API (Flask backend)
+            // Show Typing Animation
+            addMessage("🤖 Thinking...", "ai-message");
+
             const response = await fetch("/speak", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ text: speechText }),
             });
 
-            if (!response.ok) throw new Error(`Server Error: ${response.status}`);
+            if (!response.ok) {
+                throw new Error("Server Error: " + response.status);
+            }
 
             const result = await response.json();
-            const aiResponse = result.response;
+            if (result.error) {
+                throw new Error(result.error);
+            }
 
             // Display AI Response
-            addMessage(aiResponse, "ai-message");
-
-            // AI speaks the response
-            speak(aiResponse);
+            addMessage(result.response, "ai-message");
+            speak(result.response); // AI Reads Out Response
         } catch (error) {
             console.error("AI Error:", error);
-            responseBox.innerText = "❌ Error processing request.";
+            addMessage("❌ " + error.message, "error-message");
         }
+    }
 
-        startButton.disabled = false;
-    };
-
-    recognition.onspeechend = function () {
-        recognition.stop(); // Stop listening when user stops talking
-    };
-
-    recognition.onerror = function (event) {
-        console.error("Speech recognition error:", event.error);
-        responseBox.innerText = "❌ Error: " + event.error;
-        startButton.disabled = false;
-    };
-
-    // Function to Make AI Speak
+    // AI Text-to-Speech
     function speak(text) {
         const utterance = new SpeechSynthesisUtterance(text);
         speechSynthesis.speak(utterance);
     }
 
-    // Function to Add Messages to Chat
+    // Function to Add Messages to Chat Box
     function addMessage(text, className) {
         const messageDiv = document.createElement("div");
         messageDiv.classList.add("message", className);
         messageDiv.innerText = text;
 
-        // Add Copy Button for AI Response
+        // Copy Button for AI Response
         if (className === "ai-message") {
             const copyBtn = document.createElement("button");
             copyBtn.classList.add("copy-btn");
