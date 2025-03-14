@@ -11,18 +11,19 @@ body {
     justify-content: center;
     height: 100vh;
     overflow: hidden;
+    padding: 20px;
 }
 
 /* Main Container */
 .container {
-    width: 80%;
+    width: 90%;
     max-width: 600px;
     padding: 20px;
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.1);
     box-shadow: 0 8px 20px rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
-    transition: transform 0.3s ease;
+    backdrop-filter: blur(12px);
+    transition: transform 0.3s ease-in-out;
 }
 
 .container:hover {
@@ -32,15 +33,15 @@ body {
 /* Chat Box */
 .chat-box {
     width: 100%;
-    height: 320px;
+    height: 350px;
     overflow-y: auto;
-    padding: 10px;
+    padding: 15px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     margin-bottom: 15px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.1);
     scrollbar-width: thin;
     scrollbar-color: #ff9800 #2a2a3c;
@@ -119,22 +120,43 @@ body {
     transform: scale(1.1);
 }
 
-/* Start Button */
-#startButton {
-    background: linear-gradient(90deg, #ff9800, #ff5722);
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: 0.3s;
-    position: relative;
-    box-shadow: 0 5px 15px rgba(255, 152, 0, 0.3);
+/* Input Section */
+.input-section {
+    display: flex;
+    gap: 10px;
+    width: 100%;
 }
 
-#startButton:hover {
-    background: linear-gradient(90deg, #e68900, #d84315);
+input[type="text"] {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    outline: none;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+input[type="text"]::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Send Button */
+#sendButton {
+    background: #50fa7b;
+    border: none;
+    color: black;
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: 0.3s ease-in-out;
+}
+
+#sendButton:hover {
+    background: #45d665;
     transform: scale(1.05);
 }
 
@@ -153,6 +175,7 @@ body {
 #micButton:hover {
     background: #e68900;
     transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(255, 152, 0, 0.5);
 }
 
 /* Loading Indicator */
