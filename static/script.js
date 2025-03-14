@@ -1,5 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const startButton = document.getElementById("startButton");
+    const startButton = document.getElementById("startButton"); // Voice input button
+    const sendButton = document.getElementById("sendButton");   // Send button (new)
+    const userInput = document.getElementById("userInput");     // Text input field (new)
     const chatBox = document.querySelector(".chat-box");
 
     // Check SpeechRecognition support
@@ -12,14 +14,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
     recognition.interimResults = false;
-    recognition.continuous = false; // Stops after one sentence
+    recognition.continuous = false;
     recognition.maxAlternatives = 1;
 
-    let isProcessing = false; // Prevent multiple requests
+    let isProcessing = false;
 
-    // Event Listener for Start Button
+    // Event Listener for Voice Input Button
     startButton.addEventListener("click", function () {
-        if (isProcessing) return; // Prevent spam clicking
+        if (isProcessing) return;
 
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(() => {
@@ -41,7 +43,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Process Speech Recognition Result
     recognition.onresult = async function (event) {
-        if (isProcessing) return; // Prevent multiple API calls
+        if (isProcessing) return;
 
         let speechText = event.results[0][0].transcript.trim();
         console.log("User Said:", speechText);
@@ -68,10 +70,9 @@ document.addEventListener("DOMContentLoaded", function () {
         startButton.innerText = "🎤 Start Listening";
     };
 
-    // Send Speech to Flask Backend
+    // Process Speech or Text Query
     async function processSpeech(speechText) {
-        isProcessing = true; // Lock processing
-        startButton.innerText = "🤖 Thinking..."; // Indicate processing
+        isProcessing = true;
         addMessage("🤖 Thinking...", "ai-message");
 
         try {
@@ -81,18 +82,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 body: JSON.stringify({ text: speechText }),
             });
 
-            if (!response.ok) {
-                throw new Error("Server Error: " + response.status);
-            }
+            if (!response.ok) throw new Error("Server Error: " + response.status);
 
             const result = await response.json();
-            if (result.error) {
-                throw new Error(result.error);
-            }
+            if (result.error) throw new Error(result.error);
 
             // Display AI Response
             updateLastMessage(result.response);
-            await speak(result.response); // AI Reads Out Response
+            await speak(result.response);
 
         } catch (error) {
             console.error("AI Error:", error);
@@ -101,9 +98,6 @@ document.addEventListener("DOMContentLoaded", function () {
             isProcessing = false;
             startButton.innerText = "🎤 Start Listening";
             startButton.disabled = false;
-
-            // Restart recognition after AI speaks
-            setTimeout(() => recognition.start(), 1500);
         }
     }
 
@@ -117,7 +111,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.onend = resolve; // Ensure function waits until speech ends
+            utterance.onend = resolve;
             utterance.onerror = () => {
                 console.error("Speech synthesis error.");
                 resolve();
@@ -127,13 +121,13 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Function to Add Messages to Chat Box
+    // Add Message to Chat Box
     function addMessage(text, className) {
         const messageDiv = document.createElement("div");
         messageDiv.classList.add("message", className);
         messageDiv.innerText = text;
 
-        // Copy Button for AI Response
+        // Add Copy Button for AI Messages
         if (className === "ai-message") {
             const copyBtn = document.createElement("button");
             copyBtn.classList.add("copy-btn");
@@ -147,10 +141,10 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         chatBox.appendChild(messageDiv);
-        chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll
+        chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // Function to Update Last Message (for loading animation replacement)
+    // Update Last Message (Replace "🤖 Thinking...")
     function updateLastMessage(newText, isError = false) {
         const messages = document.querySelectorAll(".chat-box .ai-message");
         if (messages.length > 0) {
@@ -158,6 +152,18 @@ document.addEventListener("DOMContentLoaded", function () {
             if (isError) messages[messages.length - 1].classList.add("error-message");
         }
     }
+
+    // 📌 **NEW FEATURE**: Allow text input submission (ChatGPT-like input)
+    sendButton.addEventListener("click", function () {
+        let text = userInput.value.trim();
+        if (text !== "") {
+            addMessage(text, "user-message");
+            userInput.value = "";
+            processSpeech(text);
+        }
+    });
+
+    userInput.addEventListener("keypress", function (event) {
+        if (event.key === "Enter") sendButton.click();
+    });
 });
-
-
