@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     const startButton = document.getElementById("startButton");
-    const responseBox = document.getElementById("response");
-    const chatBox = document.querySelector(".chat-box");
+    const responseBox = document.getElementById("responseBox");
+    const chatBox = document.getElementById("chatBox");
 
     // Ensure SpeechRecognition is supported
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -13,75 +13,58 @@ document.addEventListener("DOMContentLoaded", function () {
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
     recognition.interimResults = false;
-    recognition.continuous = true; // Allows longer input
-    recognition.maxAlternatives = 1;
-
-    let speechText = "";
+    recognition.continuous = false; // Stops after a single speech input
 
     startButton.addEventListener("click", function () {
-        try {
-            // Request Microphone Permission
-            navigator.mediaDevices.getUserMedia({ audio: true })
-                .then(() => {
-                    responseBox.innerText = "🎙 Listening... Speak now!";
-                    startButton.disabled = true;
-                    recognition.start();
-                })
-                .catch((error) => {
-                    alert("Microphone access denied! Please allow access.");
-                    console.error("Mic Error:", error);
-                });
-        } catch (error) {
-            console.error("Speech recognition error:", error);
-            responseBox.innerText = "❌ Error: " + error.message;
-        }
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(() => {
+                responseBox.innerText = "🎙 Listening... Speak now!";
+                startButton.disabled = true;
+                recognition.start();
+            })
+            .catch((error) => {
+                alert("Microphone access denied! Please allow access.");
+                console.error("Mic Error:", error);
+            });
     });
 
     // Capture Speech
-    recognition.onresult = function (event) {
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-            speechText += event.results[i][0].transcript + " ";
-        }
+    recognition.onresult = async function (event) {
+        const speechText = event.results[0][0].transcript.trim();
 
-        if (speechText.split(/\s+/).length >= 50) {
-            recognition.stop(); // Stop if too long
-        }
-    };
+        // Display User Message
+        addMessage(speechText, "user-message");
 
-    recognition.onspeechend = function () {
-        recognition.stop(); // Stop listening when user stops talking
-    };
-
-    recognition.onend = async function () {
-        startButton.disabled = false;
-        responseBox.innerHTML = "<span class='typing-animation'></span>";
+        responseBox.innerText = "🤖 Processing...";
 
         try {
-            // Send input to AI API (Flask backend)
+            // Send speech text to AI API (Flask backend)
             const response = await fetch("/speak", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: speechText.trim() }),
+                body: JSON.stringify({ text: speechText }),
             });
+
+            if (!response.ok) throw new Error(`Server Error: ${response.status}`);
 
             const result = await response.json();
             const aiResponse = result.response;
 
-            // Display User Message
-            addMessage(speechText, "user-message");
-
             // Display AI Response
-            setTimeout(() => {
-                addMessage(aiResponse, "ai-message");
-                speak(aiResponse); // AI speaks
-            }, 1000);
+            addMessage(aiResponse, "ai-message");
 
+            // AI speaks the response
+            speak(aiResponse);
         } catch (error) {
             console.error("AI Error:", error);
-            responseBox.innerText = "❌ Failed to process your request.";
+            responseBox.innerText = "❌ Error processing request.";
         }
 
-        startButton.disabled = false; // Re-enable button
+        startButton.disabled = false;
+    };
+
+    recognition.onspeechend = function () {
+        recognition.stop(); // Stop listening when user stops talking
     };
 
     recognition.onerror = function (event) {
@@ -119,3 +102,4 @@ document.addEventListener("DOMContentLoaded", function () {
         chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll
     }
 });
+
