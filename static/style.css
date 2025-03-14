@@ -1,47 +1,121 @@
-/* General body styles */
+/* General Page Styling */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #121212; /* Dark background */
-    color: white; /* White text */
-    text-align: center; /* Centered text */
-    padding: 20px; /* Padding around the content */
-    margin: 0; /* Remove default margin */
+    font-family: 'Arial', sans-serif;
+    text-align: center;
+    background-color: #1e1e2e;
+    color: white;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
 }
 
-/* Heading styles */
-h1 {
-    font-size: 2.5rem; /* Increased font size for better visibility */
-    margin-bottom: 20px; /* Space below the heading */
-}
-
-/* Button styles */
-button {
-    background-color: #ff5722; /* Button color */
-    color: white; /* Text color */
-    border: none; /* No border */
-    padding: 12px 20px; /* Padding inside the button */
-    font-size: 1rem; /* Font size */
-    cursor: pointer; /* Pointer cursor on hover */
-    border-radius: 8px; /* Rounded corners */
-    transition: background-color 0.3s ease; /* Smooth transition for hover effect */
-}
-
-/* Button hover effect */
-button:hover {
-    background-color: #e64a19; /* Darker shade on hover */
-}
-
-/* Paragraph styles */
-p {
-    margin-top: 20px; /* Space above the paragraph */
-    font-size: 1.2rem; /* Font size */
-}
-
-/* Additional styles for better layout */
+/* Main Container */
 .container {
-    max-width: 800px; /* Maximum width for content */
-    margin: 0 auto; /* Center the container */
-    padding: 20px; /* Padding inside the container */
-    background-color: rgba(255, 255, 255, 0.1); /* Slightly transparent background */
-    border-radius: 10px; /* Rounded corners for the container */
+    width: 80%;
+    max-width: 600px;
+    padding: 20px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 10px rgba(255, 255, 255, 0.2);
 }
+
+/* Chat Box */
+.chat-box {
+    width: 100%;
+    height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+    background: #2a2a3c;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* User & AI Messages */
+.message {
+    padding: 10px;
+    border-radius: 8px;
+    max-width: 80%;
+    word-wrap: break-word;
+    transition: all 0.3s ease-in-out;
+    opacity: 0;
+    animation: fadeIn 0.5s forwards;
+}
+
+/* User Message */
+.user-message {
+    background: #007BFF;
+    color: white;
+    align-self: flex-end;
+    text-align: right;
+}
+
+/* AI Response */
+.ai-message {
+    background: #44475a;
+    color: #50fa7b;
+    align-self: flex-start;
+    text-align: left;
+}
+
+/* Copy Button */
+.copy-btn {
+    background: #50fa7b;
+    color: black;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 12px;
+    margin-left: 10px;
+    transition: 0.3s ease;
+}
+
+.copy-btn:hover {
+    background: #45d665;
+}
+
+/* Start Button */
+#startButton {
+    background: #ff9800;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: 0.3s;
+}
+
+#startButton:hover {
+    background-color: #e68900;
+}
+
+/* Loading Animation */
+.loader {
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top: 4px solid white;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    display: none;
+    margin: 10px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Fade In Animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
