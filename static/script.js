@@ -1,65 +1,84 @@
 document.getElementById("startButton").addEventListener("click", async function () {
     try {
-        // Check if the browser supports speech recognition
+        const startButton = document.getElementById("startButton");
+        const responseText = document.getElementById("response");
+
+        // Check if the browser supports SpeechRecognition
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
             alert("Speech recognition is not supported in this browser. Please use Chrome.");
             return;
         }
 
-        const recognition = new SpeechRecognition();
+        const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
         recognition.lang = "en-US";
         recognition.interimResults = false;
+        recognition.continuous = true; // Allows capturing multiple lines
         recognition.maxAlternatives = 1;
 
-        // Disable button while listening
-        const startButton = document.getElementById("startButton");
-        startButton.disabled = true;
-        document.getElementById("response").innerText = "🎙️ Listening... Speak now.";
+        let speechText = "";
 
-        // Start listening
+        startButton.disabled = true; // Disable button while listening
+        document.getElementById("response").innerText = "🎙 Listening... Speak now!";
+
+        // Start speech recognition
         recognition.start();
 
-        // When speech is recognized
+        // Capture recognized speech
         recognition.onresult = async function (event) {
-            const userSpeech = event.results[0][0].transcript;
-            document.getElementById("response").innerText = `You said: "${userSpeech}"`;
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                speechText += event.results[i][0].transcript + " "; // Append each recognized part
+            }
 
-            // Send recognized speech to Flask backend
-            const response = await fetch("/speak", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: userSpeech }),
-            });
-
-            const data = await response.json();
-            const aiResponse = data.response;
-            document.getElementById("response").innerText = `Jarvis: "${aiResponse}"`;
-
-            // Make AI speak the response
-            speak(aiResponse);
+            if (speechText.split(/\s+/).length >= 20) {
+                recognition.stop(); // Stop listening if 20 words are reached
+            }
         };
 
-        // Handle errors
-        recognition.onerror = function (event) {
-            console.error("Speech recognition error:", event.error);
-            document.getElementById("response").innerText = "❌ Error: " + event.error;
+        recognition.onspeechend = function () {
+            recognition.stop(); // Stop listening when the user stops talking
         };
 
-        // Re-enable button after speech ends
+        recognition.onend = async function () {
+            startButton.disabled = false;
+            document.getElementById("response").innerText = "Processing...";
+            
+            // Send the recognized speech to Flask backend
+            try {
+                const response = await fetch("/text", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: speechText.trim() }),
+                });
+
+                const result = await response.json();
+                document.getElementById("response").innerText = "Jarvis: " + result.response;
+
+                // Use Speech Synthesis API to read the response aloud
+                const utterance = new SpeechSynthesisUtterance(result.response);
+                speechSynthesis.speak(utterance);
+            } catch (error) {
+                console.error("Error:", error);
+                document.getElementById("response").innerText = "❌ Failed to process your request.";
+            }
+
+            startButton.disabled = false; // Re-enable button
+        };
+
         recognition.onend = function () {
             startButton.disabled = false;
         };
 
+        recognition.onerror = function (event) {
+            console.error("Speech recognition error:", event.error);
+            document.getElementById("response").innerText = "❌ Error: " + event.error;
+            startButton.disabled = false;
+        };
     } catch (error) {
-        console.error("Error:", error);
-        document.getElementById("response").innerText = "❌ Something went wrong.";
+        console.error("Speech recognition not supported:", error);
+        document.getElementById("response").innerText = "❌ Your browser doesn't support speech recognition.";
+        startButton.disabled = false;
     }
 });
 
-// Function to make AI speak the response
-function speak(text) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(utterance);
-}
 
